@@ -4,6 +4,8 @@ import { expect } from "e2e";
 import { attemptsLeft, CLERK_SIGN_IN, openClerkSignIn, sessionOnAccountPage, TEST_CODE } from "./clerk";
 import { newUserTest, skip, test } from "./fixtures";
 
+const GOOGLE_SIGN_IN = /^https:\/\/accounts\.google\.com\//;
+
 // Clerk's page isn't ours and isn't built for automation, so these tests retry.
 describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
   test(
@@ -52,6 +54,23 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
       await expect(browser).toHaveURL("/account", { timeout: 30_000 });
       await expect(screen.getByTestId("account-email")).toHaveText(testUser.email);
       expect(await sessionOnAccountPage(screen, clerk)).toMatchObject({ status: "active", userId: testUser.id });
+    },
+  );
+
+  test(
+    "Continue with Google hands off to Google's sign-in page",
+    {
+      agentContext: "Only start Google sign-in. Never sign in to Google: Google's sign-in page is where the test ends.",
+    },
+    async ({ app, screen, agent, browser }) => {
+      await openClerkSignIn({ app, screen, agent, browser });
+
+      await agent.act("click Continue with Google");
+
+      await expect(browser).toHaveURL(GOOGLE_SIGN_IN, { timeout: 15_000 });
+      // Google will send the user back to Clerk's OAuth callback, which finishes the sign-in.
+      const redirectUri = new URL(await browser.url()).searchParams.get("redirect_uri") ?? "";
+      expect(URL.canParse(redirectUri) && new URL(redirectUri).pathname).toBe("/v1/oauth_callback");
     },
   );
 });
