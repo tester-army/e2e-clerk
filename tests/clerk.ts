@@ -9,6 +9,7 @@ export const TEST_CODE = "424242";
 
 // Clerk's hosted sign-in page in a development instance: https://<slug>.accounts.dev/sign-in
 export const CLERK_SIGN_IN = /^https:\/\/[a-z0-9-]+\.accounts\.dev\/sign-in/;
+export const CLERK_SIGN_UP = /^https:\/\/[a-z0-9-]+\.accounts\.dev\/sign-up/;
 
 export function createClerk(secretKey: string): ClerkClient {
   return createClerkClient({ secretKey });
@@ -46,6 +47,24 @@ export function randomPassword(): string {
 // How many more failed sign-ins Clerk allows before it locks the user out.
 export async function attemptsLeft(clerk: ClerkClient, userId: string): Promise<number | null | undefined> {
   return (await clerk.users.getUser(userId)).raw?.verification_attempts_remaining;
+}
+
+// The Frontend API host is in the publishable key: pk_test_<base64 of "<host>$">.
+function frontendApiHost(): string {
+  const encoded = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.split("_")[2] ?? "";
+  return Buffer.from(encoded, "base64").toString().replace(/\$$/, "");
+}
+
+// Clerk's bot protection challenges sign-ups from automated browsers. A Testing Token on every Frontend API
+// request lets them through, as @clerk/testing's setupClerkTestingToken does for Playwright.
+export async function addTestingToken(browser: Browser, clerk: ClerkClient): Promise<void> {
+  const { token } = await clerk.testingTokens.createTestingToken();
+  const frontendApi = new RegExp(`^https://${frontendApiHost().replaceAll(".", "\\.")}/v1/`);
+  await browser.route(frontendApi, async (route) => {
+    const url = new URL(route.request.url);
+    url.searchParams.set("__clerk_testing_token", token);
+    await route.continue({ url: url.toString() });
+  });
 }
 
 // The session /account shows, as Clerk's Backend API sees it.

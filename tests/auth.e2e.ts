@@ -1,7 +1,16 @@
 import { describe } from "@e2e-dev/web";
-import { expect } from "e2e";
+import { expect, unique } from "e2e";
 
-import { attemptsLeft, CLERK_SIGN_IN, openClerkSignIn, sessionOnAccountPage, TEST_CODE } from "./clerk";
+import {
+  addTestingToken,
+  attemptsLeft,
+  CLERK_SIGN_IN,
+  CLERK_SIGN_UP,
+  openClerkSignIn,
+  randomPassword,
+  sessionOnAccountPage,
+  TEST_CODE,
+} from "./clerk";
 import { newUserTest, skip, test } from "./fixtures";
 
 const GOOGLE_SIGN_IN = /^https:\/\/accounts\.google\.com\//;
@@ -71,6 +80,30 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
       // Google will send the user back to Clerk's OAuth callback, which finishes the sign-in.
       const redirectUri = new URL(await browser.url()).searchParams.get("redirect_uri") ?? "";
       expect(URL.canParse(redirectUri) && new URL(redirectUri).pathname).toBe("/v1/oauth_callback");
+    },
+  );
+
+  newUserTest(
+    "signs up a new +clerk_test address with the test code",
+    async ({ app, screen, agent, browser, clerk, newUsers }) => {
+      const email = newUsers.email("sign-up");
+      await addTestingToken(browser, clerk);
+      await app.open("/");
+      await screen.getByRole("button", "Create account").click();
+      await expect(browser).toHaveURL(CLERK_SIGN_UP, { timeout: 15_000 });
+      await agent.waitFor("Clerk's sign-up form shows email address and password fields", { interval: 500 });
+
+      // A throwaway password for a throwaway user, so the model may see it.
+      await agent.act("sign up with email {email} and password {password}, then enter the verification code {code}", {
+        params: { email: unique(email), password: unique(randomPassword()), code: TEST_CODE },
+      });
+
+      await expect(browser).toHaveURL("/account", { timeout: 30_000 });
+      await expect(screen.getByTestId("account-email")).toHaveText(email);
+      const { data: users } = await clerk.users.getUserList({ emailAddress: [email] });
+      expect(users).toHaveLength(1);
+      expect(users[0].passwordEnabled).toBe(true);
+      expect(users[0].primaryEmailAddress?.verification?.status).toBe("verified");
     },
   );
 });
