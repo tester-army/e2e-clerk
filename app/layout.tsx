@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "@/styles/e2e.css";
@@ -46,8 +47,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body className="e2e flex min-h-dvh flex-col">
-        <SiteHeader />
-        {children}
+        <ClerkProvider>
+          <SiteHeader />
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );
