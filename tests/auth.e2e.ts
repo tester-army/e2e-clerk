@@ -1,7 +1,7 @@
 import { describe } from "@e2e-dev/web";
 import { expect } from "e2e";
 
-import { attemptsLeft, CLERK_SIGN_IN, openClerkSignIn, sessionOnAccountPage } from "./clerk";
+import { attemptsLeft, CLERK_SIGN_IN, openClerkSignIn, sessionOnAccountPage, TEST_CODE } from "./clerk";
 import { newUserTest, skip, test } from "./fixtures";
 
 // Clerk's page isn't ours and isn't built for automation, so these tests retry.
@@ -36,6 +36,22 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
 
       await expect(browser).toHaveURL(CLERK_SIGN_IN);
       expect(await attemptsLeft(clerk, user.id)).toBe((attemptsBefore ?? 0) - 1);
+    },
+  );
+
+  test(
+    "signs in with an email code instead of a password",
+    { agentContext: "Use Clerk's option to get a code by email instead of typing a password." },
+    async ({ app, screen, agent, browser, clerk, testUser }) => {
+      await openClerkSignIn({ app, screen, agent, browser });
+
+      await agent.act("sign in as {email} with a verification code sent by email, and enter the code {code}", {
+        params: { email: testUser.email, code: TEST_CODE },
+      });
+
+      await expect(browser).toHaveURL("/account", { timeout: 30_000 });
+      await expect(screen.getByTestId("account-email")).toHaveText(testUser.email);
+      expect(await sessionOnAccountPage(screen, clerk)).toMatchObject({ status: "active", userId: testUser.id });
     },
   );
 });
