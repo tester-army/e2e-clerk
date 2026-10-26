@@ -67,12 +67,16 @@ export async function sessionOnAccountPage(screen: Screen, clerk: ClerkClient) {
 
 type PageFixtures = Pick<TestFixtures, "app" | "screen" | "agent"> & { browser: Browser };
 
-export async function openClerkSignIn({ app, screen, agent, browser }: PageFixtures): Promise<void> {
-  await app.open("/");
-  await screen.getByRole("button", "Sign in").click();
+export async function waitForClerkSignIn({ agent, browser }: Pick<PageFixtures, "agent" | "browser">): Promise<void> {
   await expect(browser).toHaveURL(CLERK_SIGN_IN, { timeout: 15_000 });
   // Clerk's page renders after a few redirects of its own.
   await agent.waitFor("Clerk's sign-in form shows an email address field", { interval: 500 });
+}
+
+export async function openClerkSignIn({ app, screen, agent, browser }: PageFixtures): Promise<void> {
+  await app.open("/");
+  await screen.getByRole("button", "Sign in").click();
+  await waitForClerkSignIn({ agent, browser });
 }
 
 // Clerk refuses a code typed before it has sent one, which a replayed step can do.

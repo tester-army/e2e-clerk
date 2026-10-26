@@ -11,6 +11,7 @@ import {
   randomPassword,
   sessionOnAccountPage,
   TEST_CODE,
+  waitForClerkSignIn,
 } from "./clerk";
 import { newUserTest, skip, test } from "./fixtures";
 
@@ -51,10 +52,11 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
   );
 
   test(
-    "signs in with an email code instead of a password",
+    "a protected page sends you to sign in with an email code, then back",
     { agentContext: "Use Clerk's option to get a code by email instead of typing a password." },
     async ({ app, screen, agent, browser, clerk, testUser }) => {
-      await openClerkSignIn({ app, screen, agent, browser });
+      await app.open("/account");
+      await waitForClerkSignIn({ agent, browser });
 
       const sent = codeSent(browser);
       await agent.act(
