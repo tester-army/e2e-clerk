@@ -20,6 +20,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@clerk/backend": "^3.26.3",
     "@e2e-dev/web": "^0.15.3",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
