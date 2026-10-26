@@ -75,15 +75,26 @@ export async function openClerkSignIn({ app, screen, agent, browser }: PageFixtu
   await agent.waitFor("Clerk's sign-in form shows an email address field", { interval: 500 });
 }
 
-// Signs in as the test user on Clerk's page, with the password as a secret handle the model never sees.
+// Clerk refuses a code typed before it has sent one, which a replayed step can do.
+export function codeSent(browser: Browser) {
+  return browser.waitForResponse(
+    /\/v1\/client\/sign_(?:ins|ups)\/[^/]+\/prepare_(?:first_factor|second_factor|verification)/,
+    { timeout: 60_000 },
+  );
+}
+
+// The browser is new to Clerk, so Device Trust asks for an email code after the password.
 export async function signInWithPassword(fixtures: PageFixtures): Promise<void> {
   const { agent, browser } = fixtures;
   const ada = credentials.user("ada");
 
   await openClerkSignIn(fixtures);
+  const sent = codeSent(browser);
   await agent.act(
-    "sign in with email {email} and password {password}, then enter the verification code {code} if Clerk asks for one",
-    { params: { email: ada.username, password: ada.password, code: TEST_CODE } },
+    "enter the email {email} and continue, then enter the password {password} and continue. Stop when Clerk asks for a verification code.",
+    { params: { email: ada.username, password: ada.password } },
   );
+  await sent;
+  await agent.act("enter the verification code {code}", { params: { code: TEST_CODE } });
   await expect(browser).toHaveURL("/account", { timeout: 30_000 });
 }

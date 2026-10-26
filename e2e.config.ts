@@ -23,7 +23,7 @@ export default {
       model: gateway("openai/gpt-6-luna-fast"),
       system: "You are a thorough QA agent. Verify every outcome.",
       context:
-        "Sign-in and sign-up happen on Clerk's hosted Account Portal, a page on accounts.dev that our app redirects to. The Clerk app is a development instance in test mode: addresses with +clerk_test get no email, and every verification code is 424242. After a correct password, Clerk asks for a code when the browser is new to it.",
+        "Sign-in and sign-up happen on Clerk's hosted Account Portal, a page on accounts.dev that our app redirects to. The Clerk app is a development instance in test mode: addresses with +clerk_test get no email. After a correct password, Clerk asks for a code when the browser is new to it.",
     },
   },
   secrets,

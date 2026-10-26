@@ -6,6 +6,7 @@ import {
   attemptsLeft,
   CLERK_SIGN_IN,
   CLERK_SIGN_UP,
+  codeSent,
   openClerkSignIn,
   randomPassword,
   sessionOnAccountPage,
@@ -40,7 +41,7 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
       await openClerkSignIn({ app, screen, agent, browser });
 
       await agent.act("enter the email {email} and continue, then enter the password {password} and continue", {
-        params: { email: user.email, password: "not-the-right-password" },
+        params: { email: unique(user.email), password: "not-the-right-password" },
       });
       await agent.waitFor("Clerk says the password is incorrect", { vision: true });
 
@@ -55,9 +56,13 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
     async ({ app, screen, agent, browser, clerk, testUser }) => {
       await openClerkSignIn({ app, screen, agent, browser });
 
-      await agent.act("sign in as {email} with a verification code sent by email, and enter the code {code}", {
-        params: { email: testUser.email, code: TEST_CODE },
-      });
+      const sent = codeSent(browser);
+      await agent.act(
+        "enter the email {email} and continue, then choose to get a verification code by email. Stop when Clerk asks for the code.",
+        { params: { email: testUser.email } },
+      );
+      await sent;
+      await agent.act("enter the verification code {code}", { params: { code: TEST_CODE } });
 
       await expect(browser).toHaveURL("/account", { timeout: 30_000 });
       await expect(screen.getByTestId("account-email")).toHaveText(testUser.email);
@@ -91,9 +96,13 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
       await expect(browser).toHaveURL(CLERK_SIGN_UP, { timeout: 15_000 });
       await agent.waitFor("Clerk's sign-up form shows email address and password fields", { interval: 500 });
 
-      await agent.act("sign up with email {email} and password {password}, then enter the verification code {code}", {
-        params: { email: unique(email), password: unique(randomPassword()), code: TEST_CODE },
-      });
+      const sent = codeSent(browser);
+      await agent.act(
+        "fill in the email {email} and the password {password}, and continue. Stop when Clerk asks for a verification code.",
+        { params: { email: unique(email), password: unique(randomPassword()) } },
+      );
+      await sent;
+      await agent.act("enter the verification code {code}", { params: { code: TEST_CODE } });
 
       await expect(browser).toHaveURL("/account", { timeout: 30_000 });
       await expect(screen.getByTestId("account-email")).toHaveText(email);
