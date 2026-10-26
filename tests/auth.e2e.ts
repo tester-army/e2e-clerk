@@ -112,4 +112,23 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
       expect(users[0].primaryEmailAddress?.verification?.status).toBe("verified");
     },
   );
+
+  test(
+    "signing out ends the session in Clerk",
+    // A retry would restore the session this test ended.
+    { session: "ada-sign-out", retries: 0 },
+    async ({ app, screen, browser, clerk, testUser }) => {
+      await app.open("/account");
+      const session = await sessionOnAccountPage(screen, clerk);
+      expect(session).toMatchObject({ status: "active", userId: testUser.id });
+
+      await screen.getByRole("button", "Sign out").click();
+
+      await expect(browser).toHaveURL("/");
+      await expect(screen.getByRole("button", "Sign in")).toBeVisible();
+      await app.open("/account");
+      await expect(browser).toHaveURL(CLERK_SIGN_IN, { timeout: 15_000 });
+      expect((await clerk.sessions.getSession(session.id)).status).toBe("removed");
+    },
+  );
 });
