@@ -32,6 +32,15 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
     },
   );
 
+  test("the home page shows who is signed in", { session: "ada" }, async ({ app, screen, testUser }) => {
+    await app.open("/");
+
+    await expect(screen.getByRole("heading", "Signed in")).toBeVisible();
+    await expect(screen.getByText(`As ${testUser.email}.`)).toBeVisible();
+    await expect(screen.getByRole("link", "Open account")).toBeVisible();
+    await expect(screen.getByRole("button", "Sign in")).toBeHidden();
+  });
+
   newUserTest(
     "a wrong password shows Clerk's error, and Clerk counts the failed attempt",
     { agentContext: "The password is wrong on purpose, so Clerk's error is the expected outcome, not a failure." },
