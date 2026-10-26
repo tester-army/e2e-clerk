@@ -7,7 +7,6 @@ import { LightButton } from "@/components/ui/light-button";
 import { OUTLINE_BUTTON } from "@/components/ui/outline-button";
 
 export default async function AccountPage() {
-  // A signed-out visitor goes to Clerk's sign-in page, and comes back here afterwards.
   const { userId, sessionId } = await auth.protect();
   const user = await currentUser();
 

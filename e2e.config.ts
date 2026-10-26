@@ -11,7 +11,6 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 const secrets: Record<string, string> = {};
 if (process.env.CLERK_SECRET_KEY) secrets["clerk-secret-key"] = process.env.CLERK_SECRET_KEY;
 
-// The test user the agent signs in as. The tests create it through Clerk's Backend API if it's missing.
 const credentials: Record<string, { username: string; password: string }> = {};
 if (process.env.CLERK_TEST_PASSWORD) {
   credentials.ada = { username: "ada+clerk_test@example.com", password: process.env.CLERK_TEST_PASSWORD };

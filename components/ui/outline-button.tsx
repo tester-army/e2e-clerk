@@ -1,7 +1,6 @@
 import clsx from "clsx";
 import type { ComponentProps } from "react";
 
-/** The dark outline button's classes, for a link that looks like one. */
 export const OUTLINE_BUTTON = clsx(
   "inline-flex h-10 w-full items-center justify-center gap-1.5 px-5 whitespace-nowrap",
   "bg-e2e-button-fill type-button-s text-e2e-text-soft inset-ring-[0.5px] inset-ring-e2e-button-stroke",

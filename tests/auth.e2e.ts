@@ -15,7 +15,7 @@ import { newUserTest, skip, test } from "./fixtures";
 
 const GOOGLE_SIGN_IN = /^https:\/\/accounts\.google\.com\//;
 
-// Clerk's page isn't ours and isn't built for automation, so these tests retry.
+// Clerk's page isn't built for automation, so these tests retry.
 describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
   test(
     "the account page opens already signed in",
@@ -34,12 +34,11 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
     "a wrong password shows Clerk's error, and Clerk counts the failed attempt",
     { agentContext: "The password is wrong on purpose, so Clerk's error is the expected outcome, not a failure." },
     async ({ app, screen, agent, browser, clerk, newUsers }) => {
-      // A user of its own, so failed attempts never lock out the test user.
+      // Its own user, so failed attempts never lock ada out.
       const user = await newUsers.create("wrong-password");
       const attemptsBefore = await attemptsLeft(clerk, user.id);
       await openClerkSignIn({ app, screen, agent, browser });
 
-      // Not a secret: the wrong password may be seen, and screenshots stay on for the check below.
       await agent.act("enter the email {email} and continue, then enter the password {password} and continue", {
         params: { email: user.email, password: "not-the-right-password" },
       });
@@ -77,7 +76,6 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
       await agent.act("click Continue with Google");
 
       await expect(browser).toHaveURL(GOOGLE_SIGN_IN, { timeout: 15_000 });
-      // Google will send the user back to Clerk's OAuth callback, which finishes the sign-in.
       const redirectUri = new URL(await browser.url()).searchParams.get("redirect_uri") ?? "";
       expect(URL.canParse(redirectUri) && new URL(redirectUri).pathname).toBe("/v1/oauth_callback");
     },
@@ -93,7 +91,6 @@ describe("Clerk sign-in", { skip, retries: 2, timeout: 120_000 }, () => {
       await expect(browser).toHaveURL(CLERK_SIGN_UP, { timeout: 15_000 });
       await agent.waitFor("Clerk's sign-up form shows email address and password fields", { interval: 500 });
 
-      // A throwaway password for a throwaway user, so the model may see it.
       await agent.act("sign up with email {email} and password {password}, then enter the verification code {code}", {
         params: { email: unique(email), password: unique(randomPassword()), code: TEST_CODE },
       });

@@ -34,7 +34,6 @@ export default function HomePage() {
   );
 }
 
-// Reads the session from the request, so it renders inside <Suspense>.
 async function SessionActions() {
   const { isAuthenticated } = await auth();
 

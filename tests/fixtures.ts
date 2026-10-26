@@ -5,7 +5,7 @@ import { createClerk, ensureTestUser, randomPassword, uniqueTestEmail, type Test
 
 const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const secretKey = process.env.CLERK_SECRET_KEY;
-// Development keys contain _test_. The tests create and delete users, so a production key fails loudly instead of skipping.
+// The tests create and delete users, so a production key (no _test_) fails instead of skipping.
 if ([publishableKey, secretKey].some((key) => key && !key.includes("_test_"))) {
   throw new Error("The e2e tests only run against a Clerk development instance (pk_test_ and sk_test_ keys).");
 }
@@ -25,7 +25,6 @@ const withClerk = base.extend<{ clerk: ClerkClient }>({
   },
 });
 
-// Tests that sign in as the test user.
 export const test = withClerk.extend<{ testUser: TestUser }>({
   testUser: async ({ clerk }, use) => {
     await use(await ensureTestUser(clerk));
@@ -33,13 +32,11 @@ export const test = withClerk.extend<{ testUser: TestUser }>({
 });
 
 type NewUsers = {
-  /** A fresh test address. Any user Clerk has with it is deleted after the test. */
   email(name: string): string;
-  /** A user with a random password, created through the Backend API and deleted after the test. */
   create(name: string): Promise<TestUser>;
 };
 
-// Tests that create users of their own. Each one is deleted afterwards, after a failure too.
+// Users a test creates are deleted after it, after a failure too.
 export const newUserTest = withClerk.extend<{ newUsers: NewUsers }>({
   newUsers: async ({ clerk }, use) => {
     const emails: string[] = [];

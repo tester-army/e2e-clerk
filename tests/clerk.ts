@@ -4,10 +4,8 @@ import { createClerkClient, type ClerkClient } from "@clerk/backend";
 import type { Browser } from "@e2e-dev/web";
 import { credentials, expect, type Screen, type TestFixtures } from "e2e";
 
-// Test mode accepts this code for every +clerk_test address.
 export const TEST_CODE = "424242";
 
-// Clerk's hosted sign-in page in a development instance: https://<slug>.accounts.dev/sign-in
 export const CLERK_SIGN_IN = /^https:\/\/[a-z0-9-]+\.accounts\.dev\/sign-in/;
 export const CLERK_SIGN_UP = /^https:\/\/[a-z0-9-]+\.accounts\.dev\/sign-up/;
 
@@ -17,7 +15,6 @@ export function createClerk(secretKey: string): ClerkClient {
 
 export type TestUser = { id: string; email: string };
 
-// The user the agent signs in as, created with the configured password the first time a test needs it.
 export async function ensureTestUser(clerk: ClerkClient): Promise<TestUser> {
   const email = credentials.user("ada").username;
   const find = async () => (await clerk.users.getUserList({ emailAddress: [email] })).data[0];
@@ -35,7 +32,6 @@ export async function ensureTestUser(clerk: ClerkClient): Promise<TestUser> {
   return { id: user.id, email };
 }
 
-// A fresh test address, different on every run.
 export function uniqueTestEmail(name: string): string {
   return `${name}-${Date.now().toString(36)}${randomBytes(2).toString("hex")}+clerk_test@example.com`;
 }
@@ -44,19 +40,17 @@ export function randomPassword(): string {
   return randomBytes(18).toString("base64url");
 }
 
-// How many more failed sign-ins Clerk allows before it locks the user out.
 export async function attemptsLeft(clerk: ClerkClient, userId: string): Promise<number | null | undefined> {
   return (await clerk.users.getUser(userId)).raw?.verification_attempts_remaining;
 }
 
-// The Frontend API host is in the publishable key: pk_test_<base64 of "<host>$">.
+// pk_test_<base64 of "<frontend api host>$">
 function frontendApiHost(): string {
   const encoded = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.split("_")[2] ?? "";
   return Buffer.from(encoded, "base64").toString().replace(/\$$/, "");
 }
 
-// Clerk's bot protection challenges sign-ups from automated browsers. A Testing Token on every Frontend API
-// request lets them through, as @clerk/testing's setupClerkTestingToken does for Playwright.
+// Lets sign-ups past Clerk's bot protection, as @clerk/testing's setupClerkTestingToken does.
 export async function addTestingToken(browser: Browser, clerk: ClerkClient): Promise<void> {
   const { token } = await clerk.testingTokens.createTestingToken();
   const frontendApi = new RegExp(`^https://${frontendApiHost().replaceAll(".", "\\.")}/v1/`);
@@ -67,19 +61,17 @@ export async function addTestingToken(browser: Browser, clerk: ClerkClient): Pro
   });
 }
 
-// The session /account shows, as Clerk's Backend API sees it.
 export async function sessionOnAccountPage(screen: Screen, clerk: ClerkClient) {
   return clerk.sessions.getSession((await screen.getByTestId("account-session-id").textContent()) ?? "");
 }
 
 type PageFixtures = Pick<TestFixtures, "app" | "screen" | "agent"> & { browser: Browser };
 
-// Clicks our Sign in button and waits for Clerk's sign-in form.
 export async function openClerkSignIn({ app, screen, agent, browser }: PageFixtures): Promise<void> {
   await app.open("/");
   await screen.getByRole("button", "Sign in").click();
   await expect(browser).toHaveURL(CLERK_SIGN_IN, { timeout: 15_000 });
-  // Clerk's page renders in the browser, after a few redirects of its own.
+  // Clerk's page renders after a few redirects of its own.
   await agent.waitFor("Clerk's sign-in form shows an email address field", { interval: 500 });
 }
 
