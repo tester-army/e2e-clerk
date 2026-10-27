@@ -1,4 +1,4 @@
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import { ClerkLoaded, ClerkLoading, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -42,12 +42,19 @@ async function SessionActions() {
       <>
         <Intro title="Sign in" text="Use a password, an email code, or Google." />
         <div className="flex flex-col gap-3">
-          <SignInButton forceRedirectUrl="/account" signUpForceRedirectUrl="/account">
-            <LightButton>Sign in</LightButton>
-          </SignInButton>
-          <SignUpButton forceRedirectUrl="/account" signInForceRedirectUrl="/account">
-            <OutlineButton>Create account</OutlineButton>
-          </SignUpButton>
+          {/* Disabled until Clerk has loaded, so an early click isn't lost. */}
+          <ClerkLoading>
+            <LightButton disabled>Sign in</LightButton>
+            <OutlineButton disabled>Create account</OutlineButton>
+          </ClerkLoading>
+          <ClerkLoaded>
+            <SignInButton forceRedirectUrl="/account" signUpForceRedirectUrl="/account">
+              <LightButton>Sign in</LightButton>
+            </SignInButton>
+            <SignUpButton forceRedirectUrl="/account" signInForceRedirectUrl="/account">
+              <OutlineButton>Create account</OutlineButton>
+            </SignUpButton>
+          </ClerkLoaded>
         </div>
       </>
     );

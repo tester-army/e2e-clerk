@@ -1,4 +1,4 @@
-import { SignOutButton } from "@clerk/nextjs";
+import { ClerkLoaded, ClerkLoading, SignOutButton } from "@clerk/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 
@@ -27,9 +27,14 @@ export default async function AccountPage() {
         </div>
       </dl>
       <div className="flex flex-col gap-3">
-        <SignOutButton redirectUrl="/">
-          <LightButton>Sign out</LightButton>
-        </SignOutButton>
+        <ClerkLoading>
+          <LightButton disabled>Sign out</LightButton>
+        </ClerkLoading>
+        <ClerkLoaded>
+          <SignOutButton redirectUrl="/">
+            <LightButton>Sign out</LightButton>
+          </SignOutButton>
+        </ClerkLoaded>
         <Link href="/" className={OUTLINE_BUTTON}>
           Back to home
         </Link>
